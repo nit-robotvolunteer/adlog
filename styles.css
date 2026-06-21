@@ -1,5 +1,3 @@
-/* Custom Styles & Advanced Print Formatting */
-
 /* 1. Universal Accessibility focus ring optimization */
 *:focus-visible {
     outline: none;
@@ -73,4 +71,33 @@ html, body {
 
 textarea {
 min-height: 50px;
+}
+
+/* 発表日入力欄（input type="date"）のプレースホルダー疑似実装 */
+#session-date {
+    position: relative;
+}
+/* 値が空（未入力）のとき、疑似要素でプレースホルダーを表示 */
+#session-date:invalid::before {
+    content: "日付を選択してください";
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8; /* slate-400 と同じ色 */
+    font-size: 0.875rem; /* text-sm と同じサイズ */
+    pointer-events: none; /* タップを邪魔しない */
+}
+/* フォーカス時、または値が正しく入力された時は表示を消す */
+#session-date:focus::before,
+#session-date:valid::before {
+    display: none !important;
+}
+/* PCのChrome等で、標準の yyyy/mm/dd と文字が重なるのを防ぐ対策 */
+#session-date::-webkit-datetime-edit {
+    color: transparent;
+}
+#session-date:focus::-webkit-datetime-edit,
+#session-date:valid::-webkit-datetime-edit {
+    color: inherit;
 }
