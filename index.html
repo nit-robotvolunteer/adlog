@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アドバイスまとめPDF作成</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f4f6f9',
+                            100: '#e9edf3',
+                            600: '#2c3e50',
+                            700: '#1a252f',
+                            accent: '#3498db'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-brand-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <header class="bg-white text-white shadow-md no-print sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-xl font-bold tracking-tight flex items-center gap-2">
+                    <img src="AdLog_logo.png" alt="アドログ-アドバイスまとめPDF作成" class="h-10 w-auto">
+                </h1>
+            </div>
+            <div class="flex items-center gap-3">
+                <button id="clear-btn" class="px-4 py-2 text-sm font-bold bg-red-700 hover:bg-red-800 rounded transition-colors focus:ring-2 focus:ring-red-400 focus:outline-none" aria-label="すべての入力をクリアする">
+                    データをクリア
+                </button>
+                <button id="print-btn" class="px-4 py-2 text-sm font-bold bg-brand-accent hover:bg-blue-500 disabled:bg-slate-400 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded shadow transition-all focus:ring-2 focus:ring-blue-300 focus:outline-none flex items-center gap-1" disabled>
+                    PDFを作成
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <section class="lg:col-span-5 space-y-6 no-print" aria-labelledby="form-heading">
+            <h2 id="form-heading" class="sr-only">データ入力フォーム</h2>
+            
+            <div class="bg-white p-5 !mt-0 rounded-xl shadow-sm border border-slate-200">
+                <h3 class="text-sm font-bold text-brand-700 uppercase tracking-wider mb-4 border-l-4 border-brand-600 pl-2">
+                    1. 基本情報
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <label for="session-title" class="block text-xs font-semibold text-slate-600 mb-1">タイトル / ファイル名 <span class="text-red-500">*</span></label>
+                        <input type="text" id="session-title" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-brand-600 outline-none text-sm transition-all" placeholder="例: アドバイス_20260101">
+                    </div>
+                    <div>
+                        <label for="session-date" class="block text-xs font-semibold text-slate-600 mb-1">発表日<span class="text-red-500">*</span></label>
+                        <input type="date" id="session-date" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-brand-600 outline-none text-sm transition-all">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <h3 class="text-sm font-bold text-brand-700 uppercase tracking-wider mb-4 border-l-4 border-brand-600 pl-2">
+                    2. 質疑応答の追加
+                </h3>
+                <form id="qa-form" class="space-y-4">
+                    <div>
+                        <label for="qa-question" class="block text-xs font-semibold text-slate-600 mb-1">質問内容 <span class="text-red-500">*</span></label>
+                        <textarea id="qa-question" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-brand-600 outline-none text-sm transition-all" placeholder="聞き手からどのような指摘や疑問が出ましたか？" required></textarea>
+                    </div>
+                    <div>
+                        <label for="qa-answer" class="block text-xs font-semibold text-slate-600 mb-1">回答・今後の対応 <span class="text-red-500">*</span></label>
+                        <textarea id="qa-answer" rows="3" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-brand-600 outline-none text-sm transition-all" placeholder="その場での回答や、今後の対応などを記入します。" required></textarea>
+                    </div>
+                    
+                    <div>
+                        <label for="qa-tag" class="block text-xs font-semibold text-slate-600 mb-1">カテゴリ分類<span class="text-red-500">*</span></label>
+                        <select id="qa-tag" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-brand-600 focus:border-brand-600 outline-none text-sm transition-all" required>
+                            <option value="" selected disabled>選択してください</option>
+                            <option value="企画・調査">企画・調査</option>
+                            <option value="設計">設計</option>
+                            <option value="実験・試作">実験・試作</option>
+                            <option value="工作教室準備">工作教室準備</option>
+                            <option value="その他">その他</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="w-full mt-2 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-lg transition-all focus:ring-2 focus:ring-brand-600 focus:outline-none text-sm shadow">
+                        リストに追加する
+                    </button>
+                </form>
+            </div>
+
+            <div id="announcement" class="sr-only" aria-live="polite"></div>
+        </section>
+
+        <section class="lg:col-span-7 print-container" aria-labelledby="preview-heading">
+            <h2 id="preview-heading" class="sr-only">出力プレビュー</h2>
+            
+            <div id="document-paper" class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 min-h-[170mm] flex flex-col justify-between">
+                
+                <div>
+                    <div class="border-b-2 border-slate-800 pb-1 mb-6">
+                            <div class="text-right">
+                                <p class="text-sm font-semibold text-slate-600" id="preview-date">発表日：未設定</p>
+                            </div>
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 id="preview-title" class="text-2xl font-bold text-slate-900">タイトルを入力してください</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="preview-list" class="space-y-6">
+                        <div id="empty-state" class="text-center py-2 text-slate-400 space-y-2 no-print">
+                            <p class="text-4xl">📄</p>
+                            <p class="text-sm">フォームに入力すると、ここに入力内容が追加されます。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-200 pt-4 mt-8 flex justify-between items-center text-xs text-slate-400 print-footer">
+                    <span>ロボットボランティア工作班</span>
+                    <span>発表に対する質疑応答</span>
+                </div>
+
+            </div>
+        </section>
+
+        <section class="lg:col-span-12 bg-white p-5 rounded-xl shadow-sm border border-slate-200 no-print" aria-labelledby="guide-heading">
+            <h2 id="guide-heading" class="text-sm font-bold text-brand-700 uppercase tracking-wider mb-4 border-l-4 border-brand-600 pl-2">
+                使い方ガイド
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-xs sm:text-sm">
+                <div class="space-y-2">
+                    <h3 class="font-bold text-slate-900 flex items-center gap-1.5">
+                        <span class="flex items-center justify-center w-5 h-5 rounded-full bg-brand-100 text-brand-600 text-xs font-bold">1</span>
+                        基本情報の入力
+                    </h3>
+                    <p class="text-slate-600 leading-relaxed">「タイトル/ファイル名」と「発表日」を入力します。<br><span class="text-red-500 font-semibold">※どちらかひとつが未入力の場合、[PDFを作成]ボタンは押せません。</span></p>
+                </div>
+                <div class="space-y-2">
+                    <h3 class="font-bold text-slate-900 flex items-center gap-1.5">
+                        <span class="flex items-center justify-center w-5 h-5 rounded-full bg-brand-100 text-brand-600 text-xs font-bold">2</span>
+                        質疑応答の追加
+                    </h3>
+                    <p class="text-slate-600 leading-relaxed">聞き手から出た「質問内容」、その場での回答や課題を「回答・今後の対応」に入力し、「カテゴリ分類」を選んで<span class="font-semibold">[リストに追加する]</span>を押すと、プレビュー画面に追加されます。</p>
+                </div>
+                <div class="space-y-2">
+                    <h3 class="font-bold text-slate-900 flex items-center gap-1.5">
+                        <span class="flex items-center justify-center w-5 h-5 rounded-full bg-brand-100 text-brand-600 text-xs font-bold">3</span>
+                        入力内容の修正
+                    </h3>
+                    <p class="text-slate-600 leading-relaxed">入力ミスがあった場合は、プレビュー内の<span class="text-red-500 font-semibold">[削除]</span>ボタンで消去することができます。修正部分を削除後、再度追加してください。</p>
+                </div>
+                <div class="space-y-2">
+                    <h3 class="font-bold text-slate-900 flex items-center gap-1.5">
+                        <span class="flex items-center justify-center w-5 h-5 rounded-full bg-brand-100 text-brand-600 text-xs font-bold">4</span>
+                        PDFの作成・保存
+                    </h3>
+                    <p class="text-slate-600 leading-relaxed"><span class="font-semibold">[PDFを作成]</span>ボタンを押すと印刷画面が開きます。送信先で<span class="font-semibold">[PDFとして保存]</span>を選択してください。ファイル名は自動的に「アドバイス_発表日付」の形式にセットされます。</p>
+                </div>
+            </div>
+            <div class="mt-5 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-500">
+                <div>
+                    <span class="font-bold text-slate-700">注意点：</span>Google Chromeでは仕様上、PDF保存時にファイル名が空の状態になることがあります。その場合、手動でファイル名を入力して保存してください。
+                </div>
+                <div>
+                    <span class="font-bold text-slate-700">備考：</span>本ツールは外部サーバーと通信せずブラウザ上だけで完結して動いています。<span class="font-semibold text-red-700">[データをクリア]</span>ボタンで全ての入力を初期化できます。
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

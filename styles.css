@@ -1,0 +1,76 @@
+/* Custom Styles & Advanced Print Formatting */
+
+/* 1. Universal Accessibility focus ring optimization */
+*:focus-visible {
+    outline: none;
+}
+
+/* 2. Natural scrolling and responsive layout helpers */
+html, body {
+    height: 100%;
+}
+
+/* 3. PRINT STYLES - Crucial for pure browser 'Save as PDF' layout correctness */
+@media print {
+    /* Hide non-printable workspace areas */
+    .no-print, header, form, button, .no-print * {
+        display: none !important;
+    }
+
+    /* Format body to absolute white layout */
+    body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Force the preview paper component to full width and transparent/no shadows */
+    .print-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    #document-paper {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        min-height: auto !important;
+        background: transparent !important;
+    }
+
+    /* Ensure table rows/cards do not split awkwardly in half across pages */
+    .qa-card {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        border-bottom: none !important; /* 印刷時の下線を削除 */
+        padding-bottom: 0rem !important;
+        margin-bottom: 0rem !important;
+    }
+
+    /* Absolute document setup */
+    @page {
+        size: A4 vertical;
+        margin: 20mm 15mm 20mm 15mm;
+    }
+
+    /* Subtle grays instead of vibrant badge backgrounds for clean ink printing */
+    .badge-pending { border: 1px solid #000 !important; background: #fff !important; color: #000 !important; }
+    .badge-ongoing { border: 1px solid #000 !important; background: #eee !important; color: #000 !important; }
+    .badge-resolved { border: 1px solid #000 !important; background: #ddd !important; color: #000 !important; }
+}
+
+/* Custom non-print view animations */
+.qa-card {
+    transition: all 0.2s ease-in-out;
+}
+
+textarea {
+min-height: 50px;
+}
