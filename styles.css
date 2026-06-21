@@ -76,7 +76,13 @@ min-height: 50px;
 /* 発表日入力欄（input type="date"）のプレースホルダー疑似実装 */
 #session-date {
     position: relative;
+    /* 本体をFlexコンテナ化して、内部のパーツを完全に左寄せ＆上下中央に強制 */
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
 }
+
 /* 値が空（未入力）のとき、疑似要素でプレースホルダーを表示 */
 #session-date:invalid::before {
     content: "日付を選択してください";
@@ -87,17 +93,40 @@ min-height: 50px;
     color: #94a3b8; /* slate-400 と同じ色 */
     font-size: 0.875rem; /* text-sm と同じサイズ */
     pointer-events: none; /* タップを邪魔しない */
+    z-index: 10;
 }
-/* フォーカス時、または値が正しく入力された時は表示を消す */
+
+/* 未入力時はブラウザ標準の「年/月/日」の表示を完全に非表示にする */
+#session-date:invalid::-webkit-datetime-edit {
+    opacity: 0 !important;
+}
+
+/* フォーカス時、または値が正しく入力された時はプレースホルダーを消す */
 #session-date:focus::before,
 #session-date:valid::before {
     display: none !important;
 }
-/* PCのChrome等で、標準の yyyy/mm/dd と文字が重なるのを防ぐ対策 */
+
+/* 【修正】iOS等の内部パーツが中央寄り・上寄りになるバグを完全に上書き消去 */
 #session-date::-webkit-datetime-edit {
-    color: transparent;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: 100% !important;
+    width: 100% !important;
+    color: #334155 !important; /* タイトル欄と同じ text-slate-700 の色 */
+    opacity: 1 !important;
 }
-#session-date:focus::-webkit-datetime-edit,
-#session-date:valid::-webkit-datetime-edit {
-    color: inherit;
+
+#session-date::-webkit-datetime-edit-fields-wrapper {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: 100% !important;
 }
