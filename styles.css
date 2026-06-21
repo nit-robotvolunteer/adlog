@@ -89,9 +89,9 @@ min-height: 50px;
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: #94a3b8; /* slate-400 と同じ色 */
-    font-size: 0.875rem; /* text-sm と同じサイズ */
-    pointer-events: none; /* タップを邪魔しない */
+    color: #94a3b8;
+    font-size: 0.875rem;
+    pointer-events: none;
     z-index: 10;
 }
 
@@ -106,7 +106,11 @@ min-height: 50px;
     display: none !important;
 }
 
-/* iOS等の内部パーツが中央寄り・上寄りになるバグを完全に上書き消去 */
+#session-date::-webkit-date-and-time-value {
+    text-align: left !important;
+    width: 100% !important;
+}
+
 #session-date::-webkit-datetime-edit {
     display: flex !important;
     align-items: center !important;
@@ -116,7 +120,7 @@ min-height: 50px;
     margin: 0 !important;
     height: 100% !important;
     width: 100% !important;
-    color: #334155 !important; /* タイトル欄と同じ text-slate-700 の色 */
+    color: #334155 !important;
     opacity: 1 !important;
 }
 
