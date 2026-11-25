@@ -713,7 +713,8 @@ function buildExportData() {
 function buildFile() {
     if (editingId) commitEdit({ silent: true });
     const json = JSON.stringify(buildExportData(), null, 2);
-    return new File([json], `${baseFileName()}.json`, { type: 'application/json' });
+    // 先頭にBOMを付けて、iPhoneの「表示」やメモ帳などでも UTF-8 と判定されるようにする（文字化け防止）
+    return new File(['\uFEFF' + json], `${baseFileName()}.json`, { type: 'application/json' });
 }
 
 function exportFile() {
@@ -722,7 +723,7 @@ function exportFile() {
         return;
     }
     const file = buildFile();
-    const url = URL.createObjectURL(file);
+    const url = URL.createObjectURL(new Blob([file], { type: 'application/json;charset=utf-8' }));
     const a = document.createElement('a');
     a.href = url;
     a.download = file.name;
