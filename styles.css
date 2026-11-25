@@ -131,7 +131,7 @@ body { word-break: auto-phrase; line-break: strict; }
 @media (min-width: 1024px) {
     .layout { grid-template-columns: 400px 1fr; align-items: start; padding-bottom: 40px; }
     .side { position: sticky; top: calc(var(--header-h) + 20px); }
-    .guide { grid-column: 1 / -1; }
+    .guide { grid-column: 2; }
 }
 .side { display: flex; flex-direction: column; gap: 20px; }
 
@@ -481,3 +481,4 @@ input:focus, textarea:focus { outline: none; border-color: var(--accent); box-sh
 
     .paper-foot { color: #666; }
 }
+```[cite: 4]
