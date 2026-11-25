@@ -5,14 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#2c3e50">
     <title>AdLog(アドログ)-アドバイスまとめPDF作成-</title>
-    <meta name="description" content="AdLog(アドログ)は、発表でもらったアドバイス・質問と、その回答をまとめてPDFにできるツールです。">
+    <meta name="description" content="AdLog(アドログ)は、発表でもらった質問・アドバイスと回答をまとめてPDFにできるツールです。回答はあとから追加できます。">
+    <link rel="canonical" href="https://adlog.pages.dev/">
     <link rel="icon" href="image/favicon.ico" type="image/x-icon">
     <link rel="apple-touch-icon" href="image/apple-touch-icon.png">
-    <meta property="og:image" content="https://nit-robotvolunteer.github.io/adlog/image/ogp.png">
-    <meta property="og:title" content="AdLog(アドログ)-アドバイスまとめPDF作成-">
-    <meta property="og:description" content="AdLog(アドログ)は、アドバイスまとめPDF作成ツールです。">
+    <meta property="og:site_name" content="AdLog(アドログ)">
+    <meta property="og:locale" content="ja_JP">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://nit-robotvolunteer.github.io/adlog/">
+    <meta property="og:url" content="https://adlog.pages.dev/">
+    <meta property="og:title" content="AdLog(アドログ)-アドバイスまとめPDF作成-">
+    <meta property="og:description" content="AdLog(アドログ)は、発表でもらった質問・アドバイスと回答をまとめてPDFにできるツールです。回答はあとから追加できます。">
+    <meta property="og:image" content="https://adlog.pages.dev/image/ogp.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="AdLog(アドログ)-アドバイスまとめPDF作成">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -53,12 +59,12 @@
                     <button type="button" id="menu-btn" class="hbtn hbtn-icon" aria-haspopup="true" aria-expanded="false" aria-controls="menu-list" title="その他">
                         <svg class="icon"><use href="#i-more"/></svg><span class="sr-only">その他のメニュー</span>
                     </button>
-                    <div class="menu-list" id="menu-list" role="menu" hidden>
+                    <div class="menu-list" id="menu-list" role="menu">
                         <button type="button" role="menuitem" id="share-btn" hidden>
-                            <svg class="icon"><use href="#i-share"/></svg>ファイルを共有（LINEなど）
+                            <svg class="icon"><use href="#i-share"/></svg>ファイルを共有
                         </button>
                         <button type="button" role="menuitem" id="new-btn" class="danger">
-                            <svg class="icon"><use href="#i-new"/></svg>新規作成（データをクリア）
+                            <svg class="icon"><use href="#i-new"/></svg>新規作成
                         </button>
                     </div>
                 </div>
@@ -89,12 +95,12 @@
                 <form id="qa-form" novalidate>
                     <div class="field">
                         <label for="qa-question">質問・アドバイス <span class="req">必須</span></label>
-                        <textarea id="qa-question" rows="2" placeholder="聞き手からどのような指摘や疑問が出ましたか？"></textarea>
+                        <textarea id="qa-question" rows="2" placeholder="どんな質問・指摘が出ましたか？"></textarea>
                         <p class="field-error" id="qa-question-error" hidden>質問・アドバイスを入力してください</p>
                     </div>
                     <div class="field">
                         <label for="qa-answer">回答・今後の対応 <span class="opt">あとで追加OK</span></label>
-                        <textarea id="qa-answer" rows="2" placeholder="空欄のままでも追加できます"></textarea>
+                        <textarea id="qa-answer" rows="2" placeholder="空欄でも追加できます"></textarea>
                     </div>
                     <fieldset class="field">
                         <legend>カテゴリ <span class="opt">任意</span></legend>
@@ -131,7 +137,7 @@
 
                 <div class="empty no-print" id="empty-state">
                     <p class="empty-title">まだ質問がありません</p>
-                    <p>左（スマホでは上）のフォームから質問・アドバイスを追加してください。<br>回答はあとから追加できます。</p>
+                    <p>フォームから質問・アドバイスを<wbr>追加してください。<br>回答は<wbr>あとから<wbr>追加できます。</p>
                 </div>
                 <p class="empty no-print" id="filter-empty" hidden>未回答の質問はありません 🎉</p>
 
@@ -144,7 +150,8 @@
 
         <section class="card guide no-print" aria-labelledby="guide-heading">
             <details id="guide-details">
-                <summary><h2 id="guide-heading">使い方ガイド</h2></summary>
+                <summary><h2 id="guide-heading">使い方ガイド</h2><span class="acc-icon" aria-hidden="true"></span></summary>
+                <div class="details-body">
                 <div class="guide-grid">
                     <div>
                         <h3><span class="step">1</span>発表中：質問だけメモ</h3>
@@ -168,16 +175,25 @@
                     <p><b>注意点：</b>Google Chromeでは仕様上、PDF保存時にファイル名が空になることがあります。その場合は手動で入力してください。</p>
                     <p><b>備考：</b>AdLogは外部サーバーと通信せず、ブラウザ上だけで完結して動いています。</p>
                 </div>
+                </div>
             </details>
         </section>
 
     </main>
 
-    <button type="button" id="fab" class="fab no-print" aria-label="質問を追加" hidden>
+    <button type="button" id="fab" class="fab no-print" aria-label="質問を追加">
         <svg class="icon"><use href="#i-plus"/></svg>
     </button>
 
     <div class="toast-area no-print" id="toast-area" role="status" aria-live="polite"></div>
+
+    <dialog class="dlg no-print" id="dialog" aria-labelledby="dlg-title" aria-describedby="dlg-msg">
+        <div class="dlg-box">
+            <h2 class="dlg-title" id="dlg-title"></h2>
+            <p class="dlg-msg" id="dlg-msg"></p>
+            <div class="dlg-actions" id="dlg-actions"></div>
+        </div>
+    </dialog>
 
     <div class="drop-overlay no-print" id="drop-overlay" hidden>
         <div class="drop-box">ファイルをドロップして読み込み</div>

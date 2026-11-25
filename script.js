@@ -10,7 +10,7 @@
 const STORAGE_KEY = 'qa_tool_backup';          // 旧バージョンと同じキー（データを引き継ぐ）
 const FILE_FORMAT = 'adlog';
 const FILE_VERSION = 2;
-const CATEGORIES = ['企画・調査', '設計', '実験・試作', '工作教室準備', 'その他'];
+const CATEGORIES = ['企画・調査', '設計', '実験・試作', '工作教室準備', '工作教室本番', 'その他'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 let appData = createEmptyData();
@@ -19,6 +19,97 @@ let lastDeleted = null;        // 元に戻す用 { item, index }
 
 const $ = (id) => document.getElementById(id);
 const els = {};
+
+/* ---------------- アニメーション ---------------- */
+
+const EASE = 'cubic-bezier(.2, .8, .2, 1)';
+const motionOK = () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const liById = (id) => id && els.list.querySelector(`.qa[data-id="${cssEscape(id)}"]`);
+
+/** 要素を高さ0から開くように表示 */
+function expandIn(el, duration = 280) {
+    if (!el || !motionOK() || !el.animate) return;
+    const cs = getComputedStyle(el);
+    const h = el.offsetHeight;
+    el.style.overflow = 'hidden';
+    const a = el.animate([
+        { height: '0px', opacity: 0, paddingTop: '0px', paddingBottom: '0px' },
+        { height: h + 'px', opacity: 1, paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom }
+    ], { duration, easing: EASE });
+    a.onfinish = a.oncancel = () => { el.style.overflow = ''; };
+}
+
+/** 要素を高さ0へ閉じるように消す（終わったら resolve） */
+function collapseOut(el, duration = 220) {
+    return new Promise((resolve) => {
+        if (!el || !motionOK() || !el.animate) return resolve();
+        const cs = getComputedStyle(el);
+        el.style.overflow = 'hidden';
+        el.style.pointerEvents = 'none';
+        const a = el.animate([
+            { height: el.offsetHeight + 'px', opacity: 1, paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom },
+            { height: '0px', opacity: 0, paddingTop: '0px', paddingBottom: '0px' }
+        ], { duration, easing: EASE, fill: 'forwards' });
+        a.onfinish = a.oncancel = () => resolve();
+    });
+}
+
+/** 描画の前後で高さが変わる要素をなめらかに伸び縮みさせる（編集の開閉） */
+function morphItem(id, fn) {
+    const before = liById(id);
+    const fromH = before ? before.offsetHeight : null;
+    fn();
+    const el = liById(id);
+    if (!el || fromH == null || !motionOK() || !el.animate) return;
+    const toH = el.offsetHeight;
+    if (Math.abs(toH - fromH) < 2) return;
+    el.style.overflow = 'hidden';
+    const a = el.animate([{ height: fromH + 'px' }, { height: toH + 'px' }], { duration: 280, easing: EASE });
+    a.onfinish = a.oncancel = () => { el.style.overflow = ''; };
+}
+
+/** 並べ替えの前後で位置をなめらかに移動（FLIP） */
+function flip(fn, movingId) {
+    const before = new Map();
+    els.list.querySelectorAll('.qa').forEach((li) => before.set(li.dataset.id, li.getBoundingClientRect().top));
+    fn();
+    if (!motionOK()) return;
+    els.list.querySelectorAll('.qa').forEach((li) => {
+        const top = before.get(li.dataset.id);
+        if (top == null || !li.animate) return;
+        const dy = top - li.getBoundingClientRect().top;
+        if (!dy) return;
+        if (li.dataset.id === movingId) li.classList.add('moving');
+        const a = li.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 300, easing: EASE });
+        a.onfinish = a.oncancel = () => li.classList.remove('moving');
+    });
+}
+
+/** <details> をなめらかに開閉する */
+function setupAccordion(details) {
+    const summary = details.querySelector('summary');
+    const body = details.querySelector('.details-body');
+    let anim = null;
+    details.classList.toggle('is-open', details.open);
+    summary.addEventListener('click', (e) => {
+        e.preventDefault();
+        const opening = !details.classList.contains('is-open');
+        details.classList.toggle('is-open', opening);
+        if (!motionOK() || !body.animate) { details.open = opening; return; }
+        const startH = body.getBoundingClientRect().height;
+        if (anim) anim.cancel();
+        if (opening) details.open = true;
+        const endH = opening ? body.scrollHeight : 0;
+        anim = body.animate([
+            { height: startH + 'px', opacity: opening ? (startH ? 1 : 0) : 1 },
+            { height: endH + 'px', opacity: opening ? 1 : 0 }
+        ], { duration: 320, easing: EASE });
+        anim.onfinish = () => {
+            anim = null;
+            if (!opening) details.open = false;
+        };
+    });
+}
 
 /* ---------------- データ ---------------- */
 
@@ -133,6 +224,7 @@ function init() {
 
     // 初回（質問ゼロ）はガイドを開いておく
     els.guide.open = appData.questions.length === 0;
+    setupAccordion(els.guide);
 
     // ファイル共有に対応している端末（主にスマホ）だけ共有ボタンを出す
     try {
@@ -226,7 +318,12 @@ function bindEvents() {
         if (e.target.tagName === 'TEXTAREA') autoGrow(e.target);
     });
 
-    els.filter.addEventListener('change', renderList);
+    els.filter.addEventListener('change', () => {
+        renderList();
+        els.list.classList.remove('fade');
+        void els.list.offsetWidth;
+        els.list.classList.add('fade');
+    });
 
     // ヘッダー
     $('open-btn').addEventListener('click', openFile);
@@ -243,7 +340,7 @@ function bindEvents() {
     // メニュー
     els.menuBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        els.menuList.hidden ? openMenu() : closeMenu();
+        els.menuList.classList.contains('open') ? closeMenu() : openMenu(e.detail === 0);
     });
     document.addEventListener('click', (e) => {
         if (!els.menu.contains(e.target)) closeMenu();
@@ -265,7 +362,7 @@ function bindEvents() {
     // スマホ：フォームが画面外のときだけ「＋」ボタンを表示
     if ('IntersectionObserver' in window) {
         new IntersectionObserver(([entry]) => {
-            els.fab.hidden = entry.isIntersecting;
+            els.fab.classList.toggle('show', !entry.isIntersecting);
         }).observe(els.addCard);
     }
     els.fab.addEventListener('click', () => {
@@ -305,15 +402,15 @@ function bindEvents() {
     });
 }
 
-function openMenu() {
-    els.menuList.hidden = false;
+function openMenu(byKeyboard = false) {
+    els.menuList.classList.add('open');
     els.menuBtn.setAttribute('aria-expanded', 'true');
     const first = els.menuList.querySelector('button:not([hidden])');
-    if (first) first.focus();
+    if (first && byKeyboard) first.focus();
 }
 function closeMenu() {
-    if (els.menuList.hidden) return;
-    els.menuList.hidden = true;
+    if (!els.menuList.classList.contains('open')) return;
+    els.menuList.classList.remove('open');
     els.menuBtn.setAttribute('aria-expanded', 'false');
 }
 
@@ -351,6 +448,7 @@ function addQuestion() {
 
     save();
     renderList();
+    expandIn(liById(item.id));
     flashItem(item.id, false);
     toast(item.answer ? '追加しました' : '追加しました（回答はあとで追加できます）');
 }
@@ -377,15 +475,18 @@ function startEdit(id, focusField) {
         commitEdit({ silent: true });
     }
     editingId = id;
-    renderList();
-    const li = els.list.querySelector(`.qa[data-id="${cssEscape(id)}"]`);
+    morphItem(id, () => {
+        renderList();
+        const el = liById(id);
+        if (el) el.querySelectorAll('textarea').forEach(autoGrow);
+    });
+    const li = liById(id);
     if (!li) return;
-    li.querySelectorAll('textarea').forEach(autoGrow);
     const target = li.querySelector(focusField === 'answer' ? '.edit-answer' : '.edit-question');
     if (target) {
         target.focus({ preventScroll: true });
         target.setSelectionRange(target.value.length, target.value.length);
-        li.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        setTimeout(() => li.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 300);
     }
 }
 
@@ -414,7 +515,8 @@ function commitEdit({ silent = false } = {}) {
         Object.assign(item, { question, answer, tag, updatedAt: new Date().toISOString() });
         save();
     }
-    renderList();
+    if (silent) renderList();
+    else morphItem(id, renderList);
     if (!silent) {
         flashItem(id, true);
         if (changed) toast('更新しました');
@@ -424,12 +526,14 @@ function commitEdit({ silent = false } = {}) {
 function cancelEdit() {
     const id = editingId;
     editingId = null;
-    renderList();
+    morphItem(id, renderList);
     const li = id && els.list.querySelector(`.qa[data-id="${cssEscape(id)}"] [data-action="edit"]`);
     if (li) li.focus({ preventScroll: true });
 }
 
-function deleteQuestion(id) {
+async function deleteQuestion(id) {
+    if (!appData.questions.some((q) => q.id === id)) return;
+    await collapseOut(liById(id));
     const index = appData.questions.findIndex((q) => q.id === id);
     if (index < 0) return;
     const [item] = appData.questions.splice(index, 1);
@@ -447,6 +551,7 @@ function deleteQuestion(id) {
             lastDeleted = null;
             save();
             renderList();
+            expandIn(liById(restoredId));
             flashItem(restoredId, true);
         }
     });
@@ -460,7 +565,7 @@ function moveQuestion(id, dir) {
     const list = appData.questions;
     [list[i], list[j]] = [list[j], list[i]];
     save();
-    renderList();
+    flip(renderList, id);
     const btn = els.list.querySelector(`.qa[data-id="${cssEscape(id)}"] [data-action="${dir < 0 ? 'up' : 'down'}"]`);
     if (btn && !btn.disabled) btn.focus({ preventScroll: true });
     else {
@@ -574,7 +679,7 @@ function flashItem(id, scroll) {
     void li.offsetWidth;
     li.classList.add('flash');
     // スマホで追加したとき、一覧が見えていなければスクロールしない（入力を続けやすくする）
-    if (scroll) li.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (scroll) setTimeout(() => li.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 280);
 }
 
 function updateDirtyIndicator() {
@@ -666,12 +771,26 @@ async function importFile(file) {
         return;
     }
 
-    const hasCurrent = appData.questions.length > 0;
-    if (hasCurrent) {
-        const msg = appData.dirty
-            ? '今の内容はファイルに保存されていません。\n読み込むと今の内容は置き換えられます。続けますか？'
-            : '今の内容を、読み込んだファイルの内容に置き換えます。よろしいですか？';
-        if (!confirm(msg)) return;
+    if (appData.questions.length > 0) {
+        const unsaved = appData.dirty;
+        const choice = await askDialog({
+            title: `「${file.name}」を開く`,
+            message: unsaved
+                ? '今の内容はファイルに保存されていません。\n開くと今の内容は置き換えられます。'
+                : '今の内容を、開いたファイルの内容に置き換えます。',
+            buttons: unsaved
+                ? [
+                    { label: '今の内容を保存してから開く', value: 'save', variant: 'primary' },
+                    { label: '保存せずに開く', value: 'discard', variant: 'danger' },
+                    { label: 'キャンセル', value: 'cancel', variant: 'plain' }
+                ]
+                : [
+                    { label: '開く', value: 'discard', variant: 'primary' },
+                    { label: 'キャンセル', value: 'cancel', variant: 'plain' }
+                ]
+        });
+        if (choice === 'cancel') return;
+        if (choice === 'save') exportFile();
     }
 
     editingId = null;
@@ -680,6 +799,9 @@ async function importFile(file) {
     appData = data;
     save({ markDirty: false });
     renderAll();
+    if (motionOK() && els.paper.animate) {
+        els.paper.animate([{ opacity: .3, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: EASE });
+    }
 
     const un = appData.questions.filter((q) => !q.answer.trim()).length;
     toast(`読み込みました（${appData.questions.length}件${un ? `・未回答${un}件` : ''}）`);
@@ -692,13 +814,28 @@ async function importFile(file) {
     }
 }
 
-function newDocument() {
+async function newDocument() {
     const hasData = appData.questions.length > 0 || appData.session.title.trim();
     if (hasData) {
-        const msg = appData.dirty && appData.questions.length > 0
-            ? 'ファイルに保存していない内容があります。\nすべて消して新規作成しますか？（この操作は戻せません）'
-            : 'すべての入力を消して新規作成しますか？';
-        if (!confirm(msg)) return;
+        const unsaved = appData.dirty && appData.questions.length > 0;
+        const choice = await askDialog({
+            title: '新規作成',
+            message: unsaved
+                ? 'ファイルに保存していない内容があります。\n新規作成すると、今の内容は消えます。'
+                : '今の内容を消して、新しく始めます。\n（保存済みのファイルはそのまま残ります）',
+            buttons: unsaved
+                ? [
+                    { label: '保存してから新規作成', value: 'save', variant: 'primary' },
+                    { label: '保存せずに新規作成', value: 'discard', variant: 'danger' },
+                    { label: 'キャンセル', value: 'cancel', variant: 'plain' }
+                ]
+                : [
+                    { label: '新規作成する', value: 'discard', variant: 'danger-solid' },
+                    { label: 'キャンセル', value: 'cancel', variant: 'plain' }
+                ]
+        });
+        if (choice === 'cancel') return;
+        if (choice === 'save') exportFile();
     }
     // このアプリのデータだけを消す（同じドメインの他ツールのデータは消さない）
     try { localStorage.removeItem(STORAGE_KEY); } catch (_) { /* noop */ }
@@ -712,6 +849,10 @@ function newDocument() {
     renderAll();
     autoGrow(els.question);
     autoGrow(els.answer);
+    if (motionOK() && els.paper.animate) {
+        els.paper.animate([{ opacity: .3, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: EASE });
+    }
+    window.scrollTo({ top: 0, behavior: motionOK() ? 'smooth' : 'auto' });
     toast('新規作成しました');
 }
 
@@ -759,13 +900,58 @@ function toast(message, { type = 'info', actionLabel, onAction, duration = 3000 
         const b = document.createElement('button');
         b.type = 'button';
         b.textContent = actionLabel;
-        b.addEventListener('click', () => { onAction && onAction(); el.remove(); });
+        b.addEventListener('click', () => { onAction && onAction(); dismissToast(el); });
         el.appendChild(b);
     }
-    // 古いものは消して最大2件まで
-    while (els.toastArea.children.length >= 2) els.toastArea.firstElementChild.remove();
+    // 前のトーストは消して、常に最新の1件だけ表示
+    [...els.toastArea.children].forEach(dismissToast);
     els.toastArea.appendChild(el);
-    setTimeout(() => el.remove(), duration);
+    setTimeout(() => dismissToast(el), duration);
+}
+
+function dismissToast(el) {
+    if (!el.isConnected || el.classList.contains('leaving')) return;
+    if (!motionOK()) { el.remove(); return; }
+    el.classList.add('leaving');
+    setTimeout(() => el.remove(), 220);
+}
+
+/**
+ * 確認ダイアログ（スマホは下からのシート、PCは中央）
+ * buttons: [{ label, value, variant }] → 押したボタンの value を返す。閉じたら 'cancel'
+ */
+function askDialog({ title, message, buttons }) {
+    const dlg = $('dialog');
+    if (!dlg || typeof dlg.showModal !== 'function') {
+        // 古いブラウザ用
+        const main = buttons[0];
+        return Promise.resolve(confirm(`${title}\n\n${message}`) ? main.value : 'cancel');
+    }
+    return new Promise((resolve) => {
+        $('dlg-title').textContent = title;
+        $('dlg-msg').textContent = message;
+        const actions = $('dlg-actions');
+        actions.innerHTML = '';
+        let done = false;
+        const finish = (value) => {
+            if (done) return;
+            done = true;
+            dlg.classList.remove('visible');
+            setTimeout(() => { dlg.close(); resolve(value); }, motionOK() ? 240 : 0);
+        };
+        buttons.forEach((b) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `btn btn-${b.variant || 'ghost'}`;
+            btn.textContent = b.label;
+            btn.addEventListener('click', () => finish(b.value));
+            actions.appendChild(btn);
+        });
+        dlg.oncancel = (e) => { e.preventDefault(); finish('cancel'); };
+        dlg.onclick = (e) => { if (e.target === dlg) finish('cancel'); };
+        dlg.showModal();
+        requestAnimationFrame(() => requestAnimationFrame(() => dlg.classList.add('visible')));
+    });
 }
 
 function autoGrow(ta) {
